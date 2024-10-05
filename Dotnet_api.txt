@@ -1,0 +1,74 @@
+pipeline {
+    agent { label 'win-agent' }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git url: 'http://172.30.1.200:3005/IfinixFintech_trial/Nach_api.git', branch: 'TLBranch'
+            }
+        }
+        
+        stage('List Workspace') {
+            steps {
+                bat 'dir'  // Lists files in the workspace for debugging
+            }
+        }
+
+        stage('Restore NuGet Packages') {
+            steps {
+                script {
+                    // Restore NuGet packages
+                    bat 'dotnet restore NACH_API.sln'
+                }
+            }
+        }
+
+        stage('Build .NET Project') {
+            steps {
+                script {
+                    // Define the path to MSBuild.exe
+                    def msBuildPath = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\MsBuild.exe"
+
+                    // Build the project
+                    bat "\"${msBuildPath}\" NACH_API.sln /p:Configuration=Release"
+                }
+            }
+        }
+
+        stage('Publish Project') {
+            steps {
+                script {
+                    // Publish the project to a specific folder
+                    bat 'dotnet publish NACH_API.csproj --configuration Release --output publish'
+                }
+            }
+        }
+
+        stage('Copy to inetpub') {
+            steps {
+                script {
+                    // Define the path to the destination folder
+                    def destinationPath = "C:\\inetpub\\wwwroot\\NACHAPI"
+
+                    // Ensure the destination path exists
+                    bat "if not exist \"${destinationPath}\" mkdir \"${destinationPath}\""
+
+                    // List contents of the publish directory for debugging
+                    bat "dir publish"
+
+                    // Copy published files to the destination, including subdirectories
+                    bat "xcopy /E /I /Y \"publish\\*\" \"${destinationPath}\\\""
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo 'Build and publish successful!'
+        }
+        failure {
+            echo 'Build or publish failed.'
+        }
+    }
+}
