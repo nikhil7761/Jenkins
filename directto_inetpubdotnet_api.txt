@@ -1,0 +1,79 @@
+pipeline {
+    agent { label 'win-agent' }
+
+    environment {
+        DOTNET_HOME = 'C:\\Program Files\\dotnet'
+        PATH = "${env.PATH};${DOTNET_HOME}"
+    }
+
+    stages {
+        stage('Cleanup') {
+            steps {
+                // Clean the workspace before starting the build
+                cleanWs()
+            }
+        }
+        stage('Checkout') {
+            steps {
+                git branch: 'main', credentialsId: 'aee5f756-7752-47bb-ba93-9ba15b199308', url: 'http://172.30.1.200:3005/IfinixFintech_CommonControl/CommonControl_API.git'
+            }
+        }
+        stage('Restore Dependencies') {
+            steps {
+                bat 'dotnet restore'
+            }
+        }
+        stage('Build') {
+            steps {
+                bat 'dotnet build --configuration Release'
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                bat 'dotnet test --configuration Release'
+            }
+        }
+
+        stage('Publish') {
+            steps {
+                // Publish to a specific output directory
+                bat 'dotnet publish -c Release -o ./publish'
+            }
+        }
+        stage('Copy to inetpub') {
+    steps {
+        script {
+            // Define the path to the destination folder
+            def destinationPath = "C:\\inetpub\\wwwroot\\CommonControl_API"
+
+            // Ensure the destination path exists
+            bat "if not exist \"${destinationPath}\" mkdir \"${destinationPath}\""
+
+            // Clear existing files in the destination path
+            bat "del /Q \"${destinationPath}\\*\""
+
+            // List contents of the publish directory for debugging
+            bat "dir publish"
+
+            // Copy published files directly to the destination without an extra publish folder
+            bat """
+                robocopy ./publish "${destinationPath}" /E /R:3 /W:5 /XO
+                exit /b 0
+            """
+        }
+    }
+}
+
+    }
+
+    post {
+        success {
+            echo 'Build and tests succeeded!'
+        }
+        failure {
+            echo 'Build or tests failed!'
+        }
+        
+    }
+}
