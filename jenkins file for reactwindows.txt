@@ -1,0 +1,60 @@
+pipeline {
+    agent {
+        label 'win-agent'
+    }
+
+    environment {
+        CI = 'false'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', credentialsId: '------------------', url: '------------------'
+            }
+        }
+
+        stage('Install Dependencies') {
+            options {
+                timeout(time: 60, unit: 'MINUTES')
+            }
+            steps {
+                withEnv(["PATH+NODE=C:\\Program Files\\nodejs"]) {
+                    bat 'npm install'
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                withEnv(["PATH+NODE=C:\\Program Files\\nodejs"]) {
+                    bat 'npm run build'
+                }
+            }
+        }
+
+        // stage('Test') {
+        //     steps {
+        //         withEnv(["PATH+NODE=C:\\Program Files\\nodejs"]) {
+        //             bat 'npm test'
+        //         }
+        //     }
+        // }
+
+        stage('Deploy') {
+            steps {
+                // Use /Y to suppress confirmation prompts
+                bat 'xcopy /E /I /Y build\\* C:\\inetpub\\wwwroot\\MobileManagement\\'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build and deployment were successful!'
+        }
+        failure {
+            echo 'Build or deployment failed.'
+        }
+    }
+}
