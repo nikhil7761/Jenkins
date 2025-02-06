@@ -1,0 +1,14 @@
+Pipeline{
+    agent{ docker{image 'mvn --vers'}}
+    stages{
+      stage('build'){
+          step{
+               sh 'mvn --version' 
+          }
+         
+       }
+    }
+
+}
+
+
