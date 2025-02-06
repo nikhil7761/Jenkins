@@ -1,8 +1,10 @@
 Pipeline{
-    agent{ docker{image 'mvn --vers'}}
-    stages{
+  agent{ 
+      docker { image 'mvn --vers' }
+  }
+  stages{
       stage('build'){
-          step{
+          steps{
                sh 'mvn --version' 
           }
          
