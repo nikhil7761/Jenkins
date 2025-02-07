@@ -1,0 +1,5 @@
+agent installation on the linux
+sudo useradd -m -s /bin/bash/ jenkins
+sudo passwd jenkins
+sudo apt update 
+sudo apt install java-11-openjdk -y
